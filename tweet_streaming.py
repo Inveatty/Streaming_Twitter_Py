@@ -10,6 +10,8 @@ import tweepy
 from tweepy import Stream
 from tweepy import OAuthHandler
 from tweepy.streaming import StreamListener
+from textblob import TextBlob
+from kafka import KafkaProducer
 import time
 import argparse
 import string
@@ -40,9 +42,15 @@ class MyListener(StreamListener):
 
     def on_data(self, data):
         try:
+            producer = KafkaProducer(bootstrap_servers='localhost:9092')
             with open(self.outfile, 'a') as f:
                 f.write(data)
-                print(data)
+                #print(data)
+                data_dict = json.loads(data)
+                tweet = TextBlob(data_dict["text"])
+                print(tweet)
+                tweetKaf = str.encode(str(tweet))
+                producer.send('test', tweetKaf)
                 return True
         except BaseException as e:
             print("Error on_data: %s" % str(e))
